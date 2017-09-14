@@ -2,11 +2,12 @@
 echo "Not ready for use, please check back soon"
 exit
 
-hostslocation="$hostslocation"
+hostslocation="/etc/hosts"
 # File to store the new version beffore applying the patch.
 srclst="hostssources.lst"
 #touch "$srclst"
-
+userown="userown.lst"
+#touch "$userown"
 
 if [[ $(grep -n "# Start of patch marker &5644 #" $hostslocation | head -1 | cut -d \: -f 1) && grep -n "# End of patch marker &5844 #" $hostslocation | tail -1 | cut -d \: -f
 1 ]]; then
@@ -43,6 +44,9 @@ fi
 
 # Download lists and insert markers for splicing on next update
 echo "# Start of patch marker &5644 #" >> "$srclst"
+# Insert Warning Message to users editing hosts on their own
+echo "!!!Make no changes below here!!!, they will be deleted if they are inbetween the Start and End markers when you update your ad list"
+echo
 curl -L "http://adaway.org/hosts.txt" >> "$srclst"
 curl -L "http://hosts-file.net/ad_servers.asp" >> "$srclst"
 curl -L "http://winhelp2002.mvps.org/hosts.txt" >> "$srclst"
