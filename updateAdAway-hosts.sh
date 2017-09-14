@@ -2,30 +2,33 @@
 echo "Not ready for use, please check back soon"
 exit
 
+hostslocation="$hostslocation"
 # File to store the new version beffore applying the patch.
 srclst="hostssources.lst"
 #touch "$srclst"
 
 
-if [[ $(grep -n "# Start of patch marker &5644 #" /etc/hosts | head -1 | cut -d \: -f 1) && grep -n "# End of patch marker &5844 #" /etc/hosts | tail -1 | cut -d \: -f
+if [[ $(grep -n "# Start of patch marker &5644 #" $hostslocation | head -1 | cut -d \: -f 1) && grep -n "# End of patch marker &5844 #" $hostslocation | tail -1 | cut -d \: -f
 1 ]]; then
 	patchExists=true
-	startop=$(expr $(grep -n "# Start of patch marker &5644 #" /etc/hosts | head -1 | cut -d \: -f 1) - 1)
-	endop=$(expr $(grep -n "# End of patch marker &5844 #" /etc/hosts | tail -1 | cut -d \: -f 1) - 1)
-elif [[ $(grep -n "# Start of patch marker &5644 #" /etc/hosts | head -1 | cut -d \: -f 1) && grep -n "# End of patch marker &5844 #" /etc/hosts | tail -1 | cut -d \: -f
-1 ]]; then
+	startop=$(expr $(grep -n "# Start of patch marker &5644 #" $hostslocation | head -1 | cut -d \: -f 1) - 1)
+	endop=$(expr $(grep -n "# End of patch marker &5844 #" $hostslocation | tail -1 | cut -d \: -f 1) - 1)
+elif grep -Fxq $hostslocation
+
+
+#elif [[ $(grep -n "# Start of patch marker &5644 #" $hostslocation | head -1 | cut -d \: -f 1) && grep -n "# End of patch marker &5844 #" $hostslocation | tail -1 | cut -d \: -f 1 ]]; then
 
 # Check if the hosts file has already been patched and if so cut out the exitsing patch to splice in the updated one
-# if [[ $(grep -n "# Start of patch marker &5644 #" /etc/hosts | head -1 | cut -d \: -f 1) && grep -n "# End of patch marker &5844 #" /etc/hosts | tail -1 | cut -d \: -f 1 ]]; then
+# if [[ $(grep -n "# Start of patch marker &5644 #" $hostslocation | head -1 | cut -d \: -f 1) && grep -n "# End of patch marker &5844 #" $hostslocation | tail -1 | cut -d \: -f 1 ]]; then
 
 if patchExists; then
 	echo "Updating hosts file that has been previously patched"
 	finstring=""
 
 
-	if [ -f /etc/hosts ] ; then
-		head -$startop /etc/hosts >> "$srclst"
-		tail -$(expr $endop - $(awk 'END { print NR }' /etc/hosts)) /etc/hosts >> "$srclst"
+	if [ -f $hostslocation ] ; then
+		head -$startop $hostslocation >> "$srclst"
+		tail -$(expr $endop - $(awk 'END { print NR }' $hostslocation)) $hostslocation >> "$srclst"
 	fi
 
 
@@ -33,12 +36,12 @@ if patchExists; then
 else
 	upd=false
 	echo Running First Install
-	startop=$(awk 'END { print NR }' /etc/hosts)
-	endop=$(awk 'END { print NR }' /etc/hosts)
+	startop=$(awk 'END { print NR }' $hostslocation)
+	endop=$(awk 'END { print NR }' $hostslocation)
 fi
 
 
-
+# Download lists and insert markers for splicing on next update
 echo "# Start of patch marker &5644 #" >> "$srclst"
 curl -L "http://adaway.org/hosts.txt" >> "$srclst"
 curl -L "http://hosts-file.net/ad_servers.asp" >> "$srclst"
@@ -47,8 +50,8 @@ curl -L "http://winhelp2002.mvps.org/hosts.txt" >> "$srclst"
 echo "0.0.0.0       s.ytimg.com" >> "$srclst"
 echo "# End of patch marker &5844 #" >> "$srclst"
 
-sudo cp /etc/hosts /etc/hosts.old
-sudo cp "$srclst" /etc/hosts
+sudo cp $hostslocation $hostslocation.old
+sudo cp "$srclst" $hostslocation
 
-echo "The file at '/etc/hosts' has been patched successfully..."
+echo "The file at '$hostslocation' has been patched successfully..."
 rm "$srclst"
