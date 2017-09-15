@@ -1,5 +1,5 @@
 #!/bin/sh
-echo "Not ready for use, please check back soon"
+echo "This projetc is not ready for use, please check back soon"
 exit
 
 hostslocation="/etc/hosts"
@@ -22,23 +22,20 @@ elif grep -Fxq $hostslocation
 # Check if the hosts file has already been patched and if so cut out the exitsing patch to splice in the updated one
 # if [[ $(grep -n "# Start of patch marker &5644 #" $hostslocation | head -1 | cut -d \: -f 1) && grep -n "# End of patch marker &5844 #" $hostslocation | tail -1 | cut -d \: -f 1 ]]; then
 
-if patchExists; then
-	echo "Updating hosts file that has been previously patched"
-	finstring=""
+if [ -f $hostslocation ] ; then
+	if patchExists; then
+		echo "Updating hosts file that has been previously patched"
+		finstring="Updates finished."
 
-
-	if [ -f $hostslocation ] ; then
 		head -$startop $hostslocation >> "$srclst"
 		tail -$(expr $endop - $(awk 'END { print NR }' $hostslocation)) $hostslocation >> "$srclst"
+
+	elif !patchExists; then
+	finstring="Installed."
+		echo Running First Install
+		startop=$(awk 'END { print NR }' $hostslocation)
+		endop=$(awk 'END { print NR }' $hostslocation)
 	fi
-
-
-
-else
-	upd=false
-	echo Running First Install
-	startop=$(awk 'END { print NR }' $hostslocation)
-	endop=$(awk 'END { print NR }' $hostslocation)
 fi
 
 
