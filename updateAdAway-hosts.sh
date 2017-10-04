@@ -23,13 +23,15 @@ else
 fi
 
 
-# if [[ $(grep -n "# Start of patch marker &5644 #" $hostslocation) && $(grep -n "# End of patch marker &5844 #" $hostslocation) ]]; then
+# Check if both start AND end headers exist
 if $startexists && $endexists ; then
 	patchExists=true
 	startop=$(grep -n "# Start of patch marker &5644 #" $hostslocation | head -1 | cut -d \: -f 1)
 	endop=$(grep -n "# End of patch marker &5844 #" $hostslocation | tail -1 | cut -d \: -f 1)
 elif $startexists ^ $endexists ; then
 	echo Incomplete or failed patch detected
+	return 1
+	exit
 else
 	patchExists=false
 fi
@@ -42,35 +44,41 @@ fi
 
 if [ -f $hostslocation ] ; then
 	if patchExists; then
-		echo "Updating hosts file that has been previously patched"
-		finstring="Updates finished."
+		# Inform the user what the program thinks it is doing
+		echo "Updating hosts file that has been previously patched. There back captain, the ads!"
+		# Set the string that will tell the user what has happened at the end of execution
+		finstring="Updates finished. There gone, for now."
 
 		head -$startop $hostslocation >> "$srclst"
 		tail -$(expr $endop - $(awk 'END { print NR }' $hostslocation)) $hostslocation >> "$srclst"
 
 	elif !patchExists; then
-	finstring="Installed."
-		echo Running First Install
-		startop=$(awk 'END { print NR }' $hostslocation)
-		endop=$(awk 'END { print NR }' $hostslocation)
+		# Inform the user what the program thinks it is doing
+		echo "Running first time patch. Welcome to an ad free world! We protect our own."
+		# Set the string that will tell the user what has happened at the end of execution
+		finstring="Installed. Your safe now, no one can hurt you here."
+
+
 	fi
 fi
 
+if runPatch ; then
+	# Download lists and insert markers for splicing on next update
+	echo "# Start of patch marker &5644 #" >> "$srclst"
+	# Insert Warning Message to users editing hosts on their own
+	echo "!!!Make no changes below here!!!, they will be deleted if they are inbetween the Start and End markers when you update your ad list"
+	echo
+	# Download the lists merge them to our list
+	curl -L "http://adaway.org/hosts.txt" >> "$srclst"
+	curl -L "http://hosts-file.net/ad_servers.asp" >> "$srclst"
+	curl -L "http://winhelp2002.mvps.org/hosts.txt" >> "$srclst"
+	#For blocking youtube flash ads
+	echo "0.0.0.0       s.ytimg.com" >> "$srclst"
+	echo "# End of patch marker &5844 #" >> "$srclst"
 
-# Download lists and insert markers for splicing on next update
-echo "# Start of patch marker &5644 #" >> "$srclst"
-# Insert Warning Message to users editing hosts on their own
-echo "!!!Make no changes below here!!!, they will be deleted if they are inbetween the Start and End markers when you update your ad list"
-echo
-curl -L "http://adaway.org/hosts.txt" >> "$srclst"
-curl -L "http://hosts-file.net/ad_servers.asp" >> "$srclst"
-curl -L "http://winhelp2002.mvps.org/hosts.txt" >> "$srclst"
-#For blocking youtube flash ads
-echo "0.0.0.0       s.ytimg.com" >> "$srclst"
-echo "# End of patch marker &5844 #" >> "$srclst"
+	sudo cp $hostslocation $hostslocation.old
+	sudo cp "$srclst" $hostslocation
 
-sudo cp $hostslocation $hostslocation.old
-sudo cp "$srclst" $hostslocation
-
-echo "The file at '$hostslocation' has been patched successfully..."
-rm "$srclst"
+	echo "The file at '$hostslocation' has been patched successfully..."
+	rm "$srclst"
+fi
