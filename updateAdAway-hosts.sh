@@ -1,5 +1,5 @@
 #!/bin/sh
-echo "This projetc is not ready for use, please check back soon"
+echo "This project is not ready for use, please check back soon"
 exit
 
 hostslocation="/etc/hosts"
@@ -9,12 +9,30 @@ srclst="hostssources.lst"
 userown="userown.lst"
 #touch "$userown"
 
-if [[ $(grep -n "# Start of patch marker &5644 #" $hostslocation | head -1 | cut -d \: -f 1) && grep -n "# End of patch marker &5844 #" $hostslocation | tail -1 | cut -d \: -f
-1 ]]; then
+# Check if start and end exist and setting a variable for them
+if [[ $(grep -n "# Start of patch marker &5644 #" $hostslocation) ]]; then
+	startexists=true
+else
+	startexists=false
+fi
+
+if [[ $(grep -n "# End of patch marker &5844 #" $hostslocation) ]]; then
+	endexists=true
+else
+	endexists=false
+fi
+
+
+# if [[ $(grep -n "# Start of patch marker &5644 #" $hostslocation) && $(grep -n "# End of patch marker &5844 #" $hostslocation) ]]; then
+if $startexists && $endexists ; then
 	patchExists=true
-	startop=$(expr $(grep -n "# Start of patch marker &5644 #" $hostslocation | head -1 | cut -d \: -f 1) - 1)
-	endop=$(expr $(grep -n "# End of patch marker &5844 #" $hostslocation | tail -1 | cut -d \: -f 1) - 1)
-elif grep -Fxq $hostslocation
+	startop=$(grep -n "# Start of patch marker &5644 #" $hostslocation | head -1 | cut -d \: -f 1)
+	endop=$(grep -n "# End of patch marker &5844 #" $hostslocation | tail -1 | cut -d \: -f 1)
+elif $startexists ^ $endexists ; then
+	echo Incomplete or failed patch detected
+else
+	patchExists=false
+fi
 
 
 #elif [[ $(grep -n "# Start of patch marker &5644 #" $hostslocation | head -1 | cut -d \: -f 1) && grep -n "# End of patch marker &5844 #" $hostslocation | tail -1 | cut -d \: -f 1 ]]; then
