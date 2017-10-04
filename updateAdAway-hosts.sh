@@ -2,7 +2,13 @@
 echo "This project is not ready for use, please check back soon"
 exit
 
-hostslocation="/etc/hosts"
+# Make sure /etc/hosts exists and if not ask user where hosts file is
+if [[ $(cat /etc/hosts) ]]; then
+	hostslocation="/etc/hosts"
+else
+	echo "Where is your hosts file? I couldn't find it at /etc/hosts ;_;"
+	read -p ">" hostslocation
+fi
 # File to store the new version beffore applying the patch.
 srclst="hostssources.lst"
 #touch "$srclst"
@@ -49,8 +55,14 @@ if [ -f $hostslocation ] ; then
 		# Set the string that will tell the user what has happened at the end of execution
 		finstring="Updates finished. There gone, for now."
 
-		head -$startop $hostslocation >> "$srclst"
-		tail -$(expr $endop - $(awk 'END { print NR }' $hostslocation)) $hostslocation >> "$srclst"
+		# Saftey procaution to make sure you dont "head" below 1
+		if (( $startop > 1 )) ; then
+			# Cut the top off to save it after the patch
+			head -$(expr $startop - 1) $hostslocation >> "$srclst"
+			tail -$(expr $endop - $(awk 'END { print NR }' $hostslocation)) $hostslocation >> "$srclst"
+		else
+			echo "You have nothing in $hostslocation"
+		fi
 
 	elif !patchExists; then
 		# Inform the user what the program thinks it is doing
@@ -58,6 +70,8 @@ if [ -f $hostslocation ] ; then
 		# Set the string that will tell the user what has happened at the end of execution
 		finstring="Installed. Your safe now, no one can hurt you here."
 
+		cat $hostslocation > $srclst &&
+		runPatch=true
 
 	fi
 fi
@@ -76,7 +90,7 @@ if runPatch ; then
 	echo "0.0.0.0       s.ytimg.com" >> "$srclst"
 	echo "# End of patch marker &5844 #" >> "$srclst"
 
-	sudo cp $hostslocation $hostslocation.old
+	sudo cp $hostslocation $hostslocation.old &&
 	sudo cp "$srclst" $hostslocation
 
 	echo "The file at '$hostslocation' has been patched successfully..."
